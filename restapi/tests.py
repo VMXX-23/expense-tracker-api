@@ -2,17 +2,6 @@ from django.test import TestCase
 from restapi import models
 from django.urls import reverse
 
-# from unittest import TestCase
-
-# Create your tests here.
-# def two_integer_sum(a, b):
-# return a + b
-
-
-# class TestSum(TestCase):
-# def test_sum(self):
-#  self.assertEqual(two_integer_sum(1, 2), 3)
-
 
 class TestModels(TestCase):
     def test_expense(self):
@@ -39,8 +28,9 @@ class TestViews(TestCase):
             "category": "utilities",
         }
         res = self.client.post(
-            reverse("restapi:expense-list-create"), payload, format="json"
+            reverse("restapi:expense-list-create"), data=payload, format="json"
         )
+
         self.assertEqual(201, res.status_code)
 
         json_res = res.json()
@@ -51,7 +41,7 @@ class TestViews(TestCase):
         self.assertEqual(payload["category"], json_res["category"])
         self.assertIsInstance(json_res["id"], int)
 
-    def Test_expense_list(self):
+    def test_expense_list(self):
         res = self.client.get(reverse("restapi:expense-list-create"), format="json")
 
         self.assertEqual(200, res.status_code)
@@ -60,7 +50,9 @@ class TestViews(TestCase):
 
         self.assertIsInstance(json_res, list)
 
-        expenses = models.Expense.onjects.all()
+        expenses = (
+            models.Expense.objects.all()
+        )  # Corrected the spelling "onjects" to "objects"
         self.assertEqual(len(expenses), len(json_res))
 
     def test_expense_create_required_fields_missing(self):
@@ -70,7 +62,35 @@ class TestViews(TestCase):
             "category": "utilities",
         }
         res = self.client.post(
-            reverse("restapi:expense-list-create"), payload, format="json"
+            reverse("restapi:expense-list-create"), data=payload, format="json"
         )
 
         self.assertEqual(400, res.status_code)
+
+    def test_expense_retrieve(self):
+        expense = models.Expense.objects.create(
+            amount=300.0, merchant="Georgee", description="loan", category="Transfer"
+        )
+        res = self.client.get(
+            reverse("restapi:expense-retrieve-delete", args=[expense.pk])
+        )
+
+        self.assertEqual(200, res.status_code)
+
+        json_res = res.json()
+
+        self.assertEqual(expense.id, json_res["id"])
+        self.assertEqual(expense.amount, json_res["amount"])
+        self.assertEqual(expense.merchant, json_res["merchant"])
+        self.assertEqual(expense.description, json_res["description"])
+        self.assertEqual(expense.category, json_res["category"])
+
+    def test_delete(self):
+        expense = models.Expense.objects.create(
+            amount=400.0, merchant="Gee", description="loan", category="Transfer"
+        )
+        res = self.client.delete(
+            reverse("restapi:expense-retrieve-delete", args=[expense.id])
+        )
+        self.assertEqual(204, res.status_code)
+        self.assertFalse(models.Expense.objects.filter(pk=expense.id).exists())
