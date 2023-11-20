@@ -1,4 +1,4 @@
 django==4.2.4
 djangorestframework==3.14.0
 django-filter==23.2
-djangorestframework-api-keys==3.0.0
+djangorestframework-api-keys==3.0.5
